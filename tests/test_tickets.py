@@ -1,4 +1,4 @@
-from conftest import new_ticket
+from conftest import move_to, new_ticket
 
 
 def test_create_ticket_defaults_to_open(client):
@@ -18,18 +18,18 @@ def test_get_missing_ticket_returns_404(client):
     assert client.get("/tickets/999").status_code == 404
 
 
-def test_list_filters_by_status(client):
-    new_ticket(client)
-    second = new_ticket(client, title="Refund please").json()
-    client.patch(f"/tickets/{second['id']}", json={"status": "resolved"})
+def test_list_filters_by_status(agent_client):
+    new_ticket(agent_client)
+    second = new_ticket(agent_client, title="Refund please").json()
+    move_to(agent_client, second["id"], "resolved")
 
-    resolved = client.get("/tickets", params={"status": "resolved"}).json()
+    resolved = agent_client.get("/tickets", params={"status": "resolved"}).json()
     assert [t["title"] for t in resolved] == ["Refund please"]
 
 
-def test_patch_only_changes_sent_fields(client):
-    ticket = new_ticket(client).json()
-    res = client.patch(f"/tickets/{ticket['id']}", json={"priority": "high"})
+def test_patch_only_changes_sent_fields(agent_client):
+    ticket = new_ticket(agent_client).json()
+    res = agent_client.patch(f"/tickets/{ticket['id']}", json={"priority": "high"})
     body = res.json()
     assert body["priority"] == "high"
     assert body["title"] == "Cannot login"

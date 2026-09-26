@@ -333,11 +333,7 @@ $("reply-form").onsubmit = (e) => {
   withButton(e.target, $("reply-error"), async () => {
     await api(`/tickets/${current.id}/comments`, {
       method: "POST",
-      body: JSON.stringify({
-        author_role: "customer",
-        author_name: current.customer_email,
-        body: $("reply-body").value,
-      }),
+      body: JSON.stringify({ body: $("reply-body").value }),
     });
     e.target.reset();
     await showTicket(current.id);
