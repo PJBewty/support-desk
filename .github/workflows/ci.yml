@@ -1,0 +1,25 @@
+# รันเทสทุกครั้งที่ push หรือเปิด Pull Request
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ดึงโค้ด
+        uses: actions/checkout@v4
+
+      - name: ติดตั้ง uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true   # เก็บ cache แพ็กเกจ รันครั้งต่อไปเร็วขึ้น
+
+      - name: ติดตั้ง Python และ dependencies ตาม uv.lock
+        run: uv sync --locked
+
+      - name: รันเทส
+        run: uv run pytest -q

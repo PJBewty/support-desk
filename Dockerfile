@@ -1,0 +1,15 @@
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+
+WORKDIR /app
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+
+# ติดตั้ง dependencies ก่อนคัดลอกโค้ด: แก้โค้ดแล้ว build ใหม่ไม่ต้องโหลดแพ็กเกจซ้ำ (Docker layer cache)
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-install-project --no-dev
+
+COPY src ./src
+RUN uv sync --locked --no-dev
+
+ENV PATH="/app/.venv/bin:$PATH"
+EXPOSE 8000
+CMD ["uvicorn", "support_desk.main:app", "--host", "0.0.0.0", "--port", "8000"]

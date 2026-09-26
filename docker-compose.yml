@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: support
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-support}
+      POSTGRES_DB: support
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # ข้อมูลอยู่รอดแม้ลบ container
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U support -d support"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-8090}:8000"   # เปิดที่ localhost:8090 (8000 ใช้กับเซิร์ฟเวอร์ตอนพัฒนา)
+    environment:
+      DATABASE_URL: postgresql+psycopg://support:${POSTGRES_PASSWORD:-support}@db:5432/support
+      SECRET_KEY: ${SECRET_KEY:?ต้องตั้ง SECRET_KEY ในไฟล์ .env ก่อน}
+    depends_on:
+      db:
+        condition: service_healthy   # รอให้ Postgres พร้อมก่อนค่อยเปิดแอป
+
+volumes:
+  pgdata:
