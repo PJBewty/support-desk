@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ศูนย์ช่วยเหลือ | Support Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f7f8; --surface: #ffffff; --ink: #0b0d12; --text: #1f2430; --muted: #6b7280; --faint: #9ca3af;
+      --border: #e6e7eb; --border-strong: #d4d6dc; --accent: #4f46e5; --accent-soft: #eef0ff;
+      --ok: #0f9d6b; --ok-soft: #e8f7f1; --err: #dc2626;
+      --radius: 14px; --shadow: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text); line-height: 1.6;
+      font-family: "Inter", "IBM Plex Sans Thai", -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased; font-size: 15px;
+    }
+    svg { width: 18px; height: 18px; flex: none; }
+
+    /* ---- nav ---- */
+    nav { background: var(--surface); border-bottom: 1px solid var(--border); }
+    .nav-inner { max-width: 1040px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--ink); letter-spacing: -.01em; }
+    .logo { width: 30px; height: 30px; border-radius: 8px; background: var(--ink); color: #fff; display: grid; place-items: center; }
+    .logo svg { width: 16px; height: 16px; }
+    .nav-link { color: var(--muted); font-size: .9rem; }
+
+    /* ---- hero ---- */
+    .hero { background: var(--surface); padding: 56px 20px 96px; text-align: center; }
+    .eyebrow { display: inline-block; font-size: .78rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+    h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); line-height: 1.25; margin: 0 0 12px; color: var(--ink); letter-spacing: -.02em; font-weight: 700; }
+    .lead { color: var(--muted); margin: 0 auto; max-width: 480px; font-size: 1.02rem; }
+
+    main { max-width: 640px; margin: -64px auto 0; padding: 0 16px 64px; }
+
+    .tabs { display: flex; padding: 4px; background: #eceef1; border-radius: 12px; margin-bottom: 16px; }
+    .tabs button {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px; border: 0; border-radius: 9px; background: transparent; cursor: pointer;
+      font: inherit; font-weight: 500; color: var(--muted); transition: .15s;
+    }
+    .tabs button.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(16,24,40,.1); }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin-bottom: 16px; box-shadow: var(--shadow); }
+    .card-title { font-size: 1.1rem; font-weight: 600; color: var(--ink); margin: 0 0 4px; }
+    .card-sub { color: var(--muted); margin: 0 0 24px; font-size: .92rem; }
+
+    .field { margin-bottom: 20px; }
+    label { display: block; font-weight: 500; margin-bottom: 6px; font-size: .9rem; color: var(--ink); }
+    .hint { color: var(--faint); font-weight: 400; }
+    input, textarea {
+      width: 100%; padding: 11px 14px; font: inherit; color: var(--text);
+      border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); transition: .15s;
+    }
+    textarea { min-height: 132px; resize: vertical; }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+    ::placeholder { color: var(--faint); }
+
+    .segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .segmented label {
+      margin: 0; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 10px; cursor: pointer;
+      display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--text); transition: .15s;
+    }
+    .segmented input { display: none; }
+    .segmented label:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot.low { background: #9ca3af; } .dot.medium { background: #f59e0b; } .dot.high { background: #ef4444; }
+
+    .btn {
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 13px; font: inherit; font-weight: 600; background: var(--ink); color: #fff; border: 0;
+      border-radius: 10px; cursor: pointer; transition: .15s; margin-top: 8px;
+    }
+    .btn:hover { background: #262a35; }
+    .btn:disabled { opacity: .55; cursor: wait; }
+    .error { color: var(--err); margin-top: 12px; font-size: .88rem; }
+    .error:empty { display: none; }
+    .fineprint { text-align: center; color: var(--faint); font-size: .82rem; margin-top: 16px; }
+
+    /* ---- ticket view ---- */
+    .success { display: flex; gap: 12px; align-items: flex-start; background: var(--ok-soft); color: #075e41; padding: 16px 18px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #c5ebdc; }
+    .success svg { color: var(--ok); margin-top: 3px; }
+    .success strong { display: block; }
+    .ticket-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+    .ticket-id { font-family: "Inter", monospace; font-size: .82rem; color: var(--muted); font-weight: 500; }
+    .ticket-head h2 { margin: 2px 0 0; font-size: 1.25rem; color: var(--ink); letter-spacing: -.01em; }
+    .props { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .prop-label { font-size: .75rem; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+    .prop-value { font-size: .9rem; color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+    @media (max-width: 520px) { .props { grid-template-columns: 1fr 1fr; } .card { padding: 22px; } }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; white-space: nowrap; border: 1px solid; }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .s-open { color: #4338ca; background: #eef0ff; border-color: #dcdffd; }
+    .s-in_progress { color: #b45309; background: #fff7ea; border-color: #fbe3bd; }
+    .s-resolved { color: #047857; background: #e8f7f1; border-color: #c5ebdc; }
+    .s-closed { color: #4b5563; background: #f3f4f6; border-color: #e5e7eb; }
+    .section-label { font-size: .8rem; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+    .desc { white-space: pre-wrap; color: var(--text); }
+
+    .thread { margin-top: 24px; }
+    .msg-row { display: flex; gap: 12px; margin-top: 16px; }
+    .msg-row.customer { flex-direction: row-reverse; }
+    .avatar { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; font-weight: 600; background: var(--accent-soft); color: var(--accent); }
+    .msg-row.customer .avatar { background: var(--ink); color: #fff; }
+    .bubble { max-width: 78%; }
+    .msg-row.customer .bubble { text-align: right; }
+    .who { font-size: .8rem; color: var(--muted); margin-bottom: 4px; }
+    .who b { color: var(--ink); font-weight: 600; }
+    .msg { padding: 11px 15px; border-radius: 14px; white-space: pre-wrap; text-align: left; display: inline-block; }
+    .msg.agent { background: #f3f4f6; border-top-left-radius: 4px; }
+    .msg.customer { background: var(--ink); color: #f5f6f8; border-top-right-radius: 4px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+<!-- ไอคอนเก็บไว้ที่เดียว เรียกใช้ด้วย <use href="#i-..."> -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></symbol>
+</svg>
+
+<nav>
+  <div class="nav-inner">
+    <div class="brand"><span class="logo"><svg><use href="#i-chat"/></svg></span>Support Desk</div>
+    <span class="nav-link">ศูนย์ช่วยเหลือ</span>
+  </div>
+</nav>
+
+<header class="hero">
+  <span class="eyebrow">Customer Support</span>
+  <h1>เราพร้อมช่วยเหลือคุณ</h1>
+  <p class="lead">แจ้งปัญหาหรือสอบถามข้อมูล ทีมงานของเราจะตรวจสอบและตอบกลับโดยเร็วที่สุด</p>
+</header>
+
+<main>
+  <div class="tabs">
+    <button id="tab-new" class="active"><svg><use href="#i-plus"/></svg>แจ้งเรื่องใหม่</button>
+    <button id="tab-track"><svg><use href="#i-search"/></svg>ติดตามสถานะ</button>
+  </div>
+
+  <!-- ฟอร์มเปิด ticket -->
+  <form id="new-form" class="card">
+    <p class="card-title">รายละเอียดคำร้อง</p>
+    <p class="card-sub">กรอกข้อมูลให้ครบถ้วน เพื่อให้เราช่วยเหลือคุณได้รวดเร็วขึ้น</p>
+
+    <div class="field">
+      <label for="email">อีเมล</label>
+      <input id="email" type="email" required placeholder="name@company.com">
+    </div>
+    <div class="field">
+      <label for="title">หัวข้อ</label>
+      <input id="title" required minlength="3" maxlength="200" placeholder="สรุปปัญหาสั้น ๆ">
+    </div>
+    <div class="field">
+      <label for="description">รายละเอียด <span class="hint">· เช่น เลขคำสั่งซื้อ วันที่ และสิ่งที่เกิดขึ้น</span></label>
+      <textarea id="description" required placeholder="อธิบายปัญหาที่พบ"></textarea>
+    </div>
+    <div class="field">
+      <label>ระดับความเร่งด่วน</label>
+      <div class="segmented">
+        <label><input type="radio" name="priority" value="low"><span class="dot low"></span>ต่ำ</label>
+        <label><input type="radio" name="priority" value="medium" checked><span class="dot medium"></span>ปานกลาง</label>
+        <label><input type="radio" name="priority" value="high"><span class="dot high"></span>สูง</label>
+      </div>
+    </div>
+
+    <button class="btn" type="submit">ส่งคำร้อง</button>
+    <div class="error" id="new-error"></div>
+    <p class="fineprint">คุณจะได้รับหมายเลข ticket สำหรับติดตามสถานะหลังส่งคำร้อง</p>
+  </form>
+
+  <!-- ฟอร์มค้นหา ticket -->
+  <form id="track-form" class="card hidden">
+    <p class="card-title">ติดตามสถานะคำร้อง</p>
+    <p class="card-sub">กรอกหมายเลข ticket ที่ได้รับตอนส่งคำร้อง</p>
+    <div class="field">
+      <label for="track-id">หมายเลข ticket</label>
+      <input id="track-id" type="number" min="1" required placeholder="เช่น 1024">
+    </div>
+    <button class="btn" type="submit">ตรวจสอบสถานะ</button>
+    <div class="error" id="track-error"></div>
+  </form>
+
+  <!-- แสดง ticket + บทสนทนา -->
+  <section id="ticket-view" class="hidden">
+    <div id="created-msg" class="success hidden">
+      <svg><use href="#i-check"/></svg>
+      <div><strong>ได้รับคำร้องของคุณแล้ว</strong><span id="created-text"></span></div>
+    </div>
+    <div class="card">
+      <div class="ticket-head">
+        <div>
+          <div class="ticket-id" id="t-id"></div>
+          <h2 id="t-title"></h2>
+        </div>
+        <span class="badge" id="t-status"></span>
+      </div>
+      <div class="props">
+        <div><div class="prop-label">อีเมล</div><div class="prop-value" id="t-email"></div></div>
+        <div><div class="prop-label">ความเร่งด่วน</div><div class="prop-value" id="t-priority"></div></div>
+        <div><div class="prop-label">วันที่แจ้ง</div><div class="prop-value" id="t-date"></div></div>
+      </div>
+      <div class="section-label">รายละเอียด</div>
+      <div class="desc" id="t-desc"></div>
+      <div class="thread" id="t-comments"></div>
+    </div>
+
+    <form id="reply-form" class="card">
+      <div class="field">
+        <label for="reply-body">ตอบกลับ</label>
+        <textarea id="reply-body" required placeholder="พิมพ์ข้อความถึงทีมงาน"></textarea>
+      </div>
+      <button class="btn" type="submit"><svg><use href="#i-send"/></svg>ส่งข้อความ</button>
+      <div class="error" id="reply-error"></div>
+    </form>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const STATUS_TH = { open: "รอดำเนินการ", in_progress: "กำลังดำเนินการ", resolved: "แก้ไขแล้ว", closed: "ปิดแล้ว" };
+const PRIORITY_TH = { low: "ต่ำ", medium: "ปานกลาง", high: "สูง" };
+let current = null; // ticket ที่กำลังดูอยู่
+
+async function api(path, options = {}) {
+  const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...options });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    if (res.status === 404) throw new Error("ไม่พบหมายเลข ticket นี้ในระบบ");
+    if (res.status === 409) throw new Error("คำร้องนี้ปิดแล้ว ไม่สามารถตอบกลับได้");
+    if (res.status === 422) throw new Error("ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง");
+    throw new Error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+  }
+  return data;
+}
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text; // textContent เสมอ กัน XSS
+  return node;
+}
+
+function showTab(name) {
+  $("tab-new").classList.toggle("active", name === "new");
+  $("tab-track").classList.toggle("active", name === "track");
+  $("new-form").classList.toggle("hidden", name !== "new");
+  $("track-form").classList.toggle("hidden", name !== "track");
+  $("ticket-view").classList.add("hidden");
+}
+$("tab-new").onclick = () => showTab("new");
+$("tab-track").onclick = () => showTab("track");
+
+async function showTicket(id, justCreated = false) {
+  const [ticket, comments] = await Promise.all([
+    api(`/tickets/${id}`),
+    api(`/tickets/${id}/comments`),
+  ]);
+  current = ticket;
+
+  $("new-form").classList.add("hidden");
+  $("track-form").classList.add("hidden");
+  $("ticket-view").classList.remove("hidden");
+
+  $("created-msg").classList.toggle("hidden", !justCreated);
+  $("created-text").textContent = `หมายเลข ticket ของคุณคือ #${ticket.id} โปรดเก็บไว้สำหรับติดตามสถานะ`;
+
+  $("t-id").textContent = `TICKET #${ticket.id}`;
+  $("t-title").textContent = ticket.title;
+  $("t-status").textContent = STATUS_TH[ticket.status];
+  $("t-status").className = `badge s-${ticket.status}`;
+  $("t-email").textContent = ticket.customer_email;
+  $("t-priority").textContent = PRIORITY_TH[ticket.priority];
+  $("t-date").textContent = new Date(ticket.created_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
+  $("t-desc").textContent = ticket.description;
+
+  const list = $("t-comments");
+  list.replaceChildren();
+  for (const c of comments) {
+    const isAgent = c.author_role === "agent";
+    const row = el("div", `msg-row ${c.author_role}`);
+    const bubble = el("div", "bubble");
+    const who = el("div", "who");
+    who.append(el("b", "", isAgent ? c.author_name : "คุณ"), ` · ${isAgent ? "ทีมงาน · " : ""}${new Date(c.created_at).toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" })}`);
+    bubble.append(who, el("div", `msg ${c.author_role}`, c.body));
+    row.append(el("div", "avatar", (isAgent ? c.author_name : ticket.customer_email).slice(0, 1).toUpperCase()), bubble);
+    list.append(row);
+  }
+  $("reply-form").classList.toggle("hidden", ticket.status === "closed");
+}
+
+async function withButton(form, errorEl, fn) {
+  const btn = form.querySelector("button[type=submit]");
+  btn.disabled = true;
+  errorEl.textContent = "";
+  try { await fn(); }
+  catch (err) { errorEl.textContent = err.message; }
+  finally { btn.disabled = false; }
+}
+
+$("new-form").onsubmit = (e) => {
+  e.preventDefault();
+  withButton(e.target, $("new-error"), async () => {
+    const ticket = await api("/tickets", {
+      method: "POST",
+      body: JSON.stringify({
+        customer_email: $("email").value,
+        title: $("title").value,
+        description: $("description").value,
+        priority: document.querySelector("input[name=priority]:checked").value,
+      }),
+    });
+    e.target.reset();
+    await showTicket(ticket.id, true);
+  });
+};
+
+$("track-form").onsubmit = (e) => {
+  e.preventDefault();
+  withButton(e.target, $("track-error"), () => showTicket($("track-id").value));
+};
+
+$("reply-form").onsubmit = (e) => {
+  e.preventDefault();
+  withButton(e.target, $("reply-error"), async () => {
+    await api(`/tickets/${current.id}/comments`, {
+      method: "POST",
+      body: JSON.stringify({
+        author_role: "customer",
+        author_name: current.customer_email,
+        body: $("reply-body").value,
+      }),
+    });
+    e.target.reset();
+    await showTicket(current.id);
+  });
+};
+</script>
+</body>
+</html>

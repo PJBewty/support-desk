@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inbox | Support Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f7f8; --surface: #ffffff; --ink: #0b0d12; --text: #1f2430; --muted: #6b7280; --faint: #9ca3af;
+      --border: #e6e7eb; --border-strong: #d4d6dc; --hover: #f5f6f8; --accent: #4f46e5; --accent-soft: #eef0ff;
+      --err: #dc2626;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text); line-height: 1.55; font-size: 14px;
+      font-family: "Inter", "IBM Plex Sans Thai", -apple-system, sans-serif; -webkit-font-smoothing: antialiased;
+      display: flex; flex-direction: column;
+    }
+    svg { width: 16px; height: 16px; flex: none; }
+    input, textarea, select {
+      font: inherit; color: var(--text); background: var(--surface);
+      border: 1px solid var(--border-strong); border-radius: 8px; padding: 8px 11px; transition: .15s;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    ::placeholder { color: var(--faint); }
+
+    /* ---- top bar ---- */
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 18px; background: var(--ink); color: #fff; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.01em; }
+    .logo { width: 28px; height: 28px; border-radius: 7px; background: #fff; color: var(--ink); display: grid; place-items: center; }
+    .brand .sep { color: #4b5160; font-weight: 400; }
+    .brand .page { color: #a8adb8; font-weight: 500; }
+    .me { display: flex; align-items: center; gap: 10px; }
+    .me input { background: #1b1e26; border-color: #2c303b; color: #fff; width: 170px; padding: 6px 10px; }
+    .me input:focus { border-color: #6366f1; box-shadow: none; }
+    .me-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; font-weight: 600; font-size: .8rem; }
+
+    /* ---- 3 คอลัมน์ ---- */
+    .layout { flex: 1; min-height: 0; display: grid; grid-template-columns: 340px 1fr 280px; }
+    .col { min-height: 0; display: flex; flex-direction: column; background: var(--surface); }
+    .col + .col { border-left: 1px solid var(--border); }
+    @media (max-width: 1100px) { .layout { grid-template-columns: 320px 1fr; } .props-col { display: none !important; } .inline-props { display: grid !important; } }
+    @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .col + .col { border-left: 0; border-top: 1px solid var(--border); } }
+
+    /* inbox */
+    .inbox-head { padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
+    .inbox-head h2 { margin: 0 0 12px; font-size: 1rem; color: var(--ink); }
+    .search { position: relative; }
+    .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--faint); }
+    .search input { width: 100%; padding-left: 32px; }
+    .filters { display: flex; gap: 4px; margin-top: 12px; flex-wrap: wrap; }
+    .filters button {
+      display: flex; align-items: center; gap: 6px; padding: 5px 10px; border: 0; border-radius: 7px; background: transparent;
+      cursor: pointer; font: inherit; font-size: .82rem; font-weight: 500; color: var(--muted); white-space: nowrap;
+    }
+    .filters button:hover { background: var(--hover); }
+    .filters button.active { background: var(--ink); color: #fff; }
+    .count { font-size: .72rem; padding: 0 6px; border-radius: 999px; background: #eceef1; color: var(--muted); font-weight: 600; }
+    .filters button.active .count { background: #2c303b; color: #d1d5db; }
+    .list { overflow-y: auto; flex: 1; }
+    .item { padding: 13px 16px; border-bottom: 1px solid var(--border); cursor: pointer; position: relative; }
+    .item:hover { background: var(--hover); }
+    .item.selected { background: var(--accent-soft); }
+    .item.selected::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+    .item-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .item-email { font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
+    .item-time { color: var(--faint); font-size: .75rem; white-space: nowrap; }
+    .item-title { margin: 2px 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+    .item-tags { display: flex; gap: 6px; align-items: center; }
+
+    /* conversation */
+    .conv-head { padding: 16px 24px; border-bottom: 1px solid var(--border); }
+    .ticket-id { font-size: .75rem; color: var(--muted); font-weight: 600; letter-spacing: .04em; }
+    .conv-head h2 { margin: 2px 0 0; font-size: 1.15rem; color: var(--ink); letter-spacing: -.01em; }
+    .thread { flex: 1; overflow-y: auto; padding: 8px 24px 24px; background: #fbfbfc; }
+    .inline-props { display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .msg-row { display: flex; gap: 12px; margin-top: 20px; }
+    .avatar { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: .78rem; font-weight: 600; background: #eceef1; color: var(--text); }
+    .msg-row.agent .avatar { background: var(--accent); color: #fff; }
+    .bubble { flex: 1; min-width: 0; }
+    .who { font-size: .8rem; color: var(--faint); margin-bottom: 4px; }
+    .who b { color: var(--ink); font-weight: 600; margin-right: 4px; }
+    .role { font-size: .7rem; padding: 1px 6px; border-radius: 4px; background: #eceef1; color: var(--muted); font-weight: 600; margin-right: 6px; }
+    .msg-row.agent .role { background: var(--accent-soft); color: var(--accent); }
+    .msg { padding: 12px 16px; border-radius: 10px; white-space: pre-wrap; background: var(--surface); border: 1px solid var(--border); }
+    .msg-row.agent .msg { background: #f7f7ff; border-color: #e3e4fb; }
+    .composer { padding: 16px 24px; border-top: 1px solid var(--border); }
+    .composer-box { border: 1px solid var(--border-strong); border-radius: 10px; transition: .15s; }
+    .composer-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .composer textarea { width: 100%; border: 0; min-height: 84px; resize: vertical; padding: 12px 14px; box-shadow: none; background: transparent; }
+    .composer-foot { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px 8px 14px; border-top: 1px solid var(--border); }
+    .kbd-hint { color: var(--faint); font-size: .78rem; }
+    kbd { font-family: inherit; font-size: .72rem; padding: 1px 5px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; font: inherit; font-weight: 600;
+      background: var(--ink); color: #fff; border: 0; border-radius: 8px; cursor: pointer; transition: .15s;
+    }
+    .btn:hover { background: #262a35; }
+    .btn:disabled { opacity: .55; cursor: wait; }
+    .error { color: var(--err); font-size: .85rem; margin-top: 8px; }
+    .error:empty { display: none; }
+    .closed-note { padding: 16px 24px; border-top: 1px solid var(--border); color: var(--muted); text-align: center; background: var(--bg); }
+
+    /* properties */
+    .props-col { padding: 20px; overflow-y: auto; gap: 20px; }
+    .props-title { font-size: .75rem; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 10px; }
+    .prop { margin-bottom: 14px; }
+    .prop label, .prop-label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+    .prop select { width: 100%; }
+    .prop-value { color: var(--ink); font-weight: 500; word-break: break-all; }
+    .divider { height: 1px; background: var(--border); margin: 4px 0 18px; }
+
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 600; white-space: nowrap; border: 1px solid; }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .s-open { color: #4338ca; background: #eef0ff; border-color: #dcdffd; }
+    .s-in_progress { color: #b45309; background: #fff7ea; border-color: #fbe3bd; }
+    .s-resolved { color: #047857; background: #e8f7f1; border-color: #c5ebdc; }
+    .s-closed { color: #4b5563; background: #f3f4f6; border-color: #e5e7eb; }
+    .prio { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; color: var(--muted); font-weight: 500; }
+    .prio::before { content: ""; width: 7px; height: 7px; border-radius: 2px; }
+    .prio.low::before { background: #9ca3af; } .prio.medium::before { background: #f59e0b; } .prio.high::before { background: #ef4444; }
+    .prio.high { color: var(--err); }
+
+    .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--muted); padding: 40px; text-align: center; }
+    .empty-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--hover); display: grid; place-items: center; color: var(--faint); }
+    .empty-icon svg { width: 22px; height: 22px; }
+    .empty strong { color: var(--ink); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+</svg>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo"><svg><use href="#i-chat"/></svg></span>Support Desk
+    <span class="sep">/</span><span class="page">Inbox</span>
+  </div>
+  <div class="me">
+    <input id="agent-name" placeholder="ชื่อเจ้าหน้าที่" aria-label="ชื่อเจ้าหน้าที่">
+    <div class="me-avatar" id="me-avatar">?</div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- คอลัมน์ 1: inbox -->
+  <aside class="col">
+    <div class="inbox-head">
+      <h2>Tickets</h2>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input id="search" placeholder="ค้นหาหัวข้อหรืออีเมล">
+      </div>
+      <div class="filters" id="filters">
+        <button data-status="" class="active">ทั้งหมด <span class="count"></span></button>
+        <button data-status="open">รอดำเนินการ <span class="count"></span></button>
+        <button data-status="in_progress">กำลังทำ <span class="count"></span></button>
+        <button data-status="resolved">แก้แล้ว <span class="count"></span></button>
+        <button data-status="closed">ปิดแล้ว <span class="count"></span></button>
+      </div>
+    </div>
+    <div class="list" id="list"></div>
+  </aside>
+
+  <!-- คอลัมน์ 2: บทสนทนา -->
+  <section class="col">
+    <div id="placeholder" class="empty">
+      <div class="empty-icon"><svg><use href="#i-inbox"/></svg></div>
+      <strong>ยังไม่ได้เลือก ticket</strong>
+      <span>เลือก ticket จากรายการด้านซ้ายเพื่อดูรายละเอียดและตอบกลับลูกค้า</span>
+    </div>
+
+    <div id="view" class="hidden" style="display:flex; flex-direction:column; flex:1; min-height:0">
+      <div class="conv-head">
+        <div class="ticket-id" id="t-id"></div>
+        <h2 id="t-title"></h2>
+        <!-- จอเล็ก: ย้าย status/priority มาไว้ตรงนี้แทนคอลัมน์ขวา -->
+        <div class="inline-props" id="inline-props"></div>
+      </div>
+      <div class="thread" id="thread"></div>
+
+      <form id="reply-form" class="composer">
+        <div class="composer-box">
+          <textarea id="reply-body" required placeholder="เขียนคำตอบถึงลูกค้า"></textarea>
+          <div class="composer-foot">
+            <span class="kbd-hint"><kbd>⌘</kbd> + <kbd>Enter</kbd> เพื่อส่ง</span>
+            <button class="btn" type="submit"><svg><use href="#i-send"/></svg>ส่งคำตอบ</button>
+          </div>
+        </div>
+        <div class="error" id="reply-error"></div>
+      </form>
+      <div id="closed-note" class="closed-note hidden">Ticket นี้ปิดแล้ว เปลี่ยนสถานะเพื่อเปิดใหม่ก่อนตอบกลับ</div>
+    </div>
+  </section>
+
+  <!-- คอลัมน์ 3: รายละเอียด -->
+  <aside class="col props-col" id="props-col">
+    <div id="props" class="hidden">
+      <p class="props-title">Properties</p>
+      <div id="props-controls">
+        <div class="prop">
+          <label for="t-status">สถานะ</label>
+          <select id="t-status">
+            <option value="open">รอดำเนินการ</option>
+            <option value="in_progress">กำลังดำเนินการ</option>
+            <option value="resolved">แก้ไขแล้ว</option>
+            <option value="closed">ปิดแล้ว</option>
+          </select>
+        </div>
+        <div class="prop">
+          <label for="t-priority">ความเร่งด่วน</label>
+          <select id="t-priority">
+            <option value="low">ต่ำ</option>
+            <option value="medium">ปานกลาง</option>
+            <option value="high">สูง</option>
+          </select>
+        </div>
+      </div>
+      <div class="error" id="update-error"></div>
+      <div class="divider"></div>
+      <p class="props-title">Customer</p>
+      <div class="prop"><span class="prop-label">อีเมล</span><div class="prop-value" id="t-email"></div></div>
+      <div class="divider"></div>
+      <p class="props-title">Activity</p>
+      <div class="prop"><span class="prop-label">สร้างเมื่อ</span><div class="prop-value" id="t-created"></div></div>
+      <div class="prop"><span class="prop-label">อัปเดตล่าสุด</span><div class="prop-value" id="t-updated"></div></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const STATUS_TH = { open: "รอดำเนินการ", in_progress: "กำลังทำ", resolved: "แก้แล้ว", closed: "ปิดแล้ว" };
+const PRIORITY_TH = { low: "ต่ำ", medium: "ปานกลาง", high: "สูง" };
+let tickets = [];      // ticket ทั้งหมด (กรองฝั่งเบราว์เซอร์)
+let filter = "";
+let selectedId = null;
+
+// จำชื่อเจ้าหน้าที่ไว้ในเบราว์เซอร์ ไม่ต้องพิมพ์ใหม่ทุกครั้ง
+function syncAvatar() { $("me-avatar").textContent = ($("agent-name").value.trim()[0] || "?").toUpperCase(); }
+try { $("agent-name").value = localStorage.getItem("agentName") || ""; } catch {}
+syncAvatar();
+$("agent-name").oninput = (e) => {
+  syncAvatar();
+  try { localStorage.setItem("agentName", e.target.value); } catch {}
+};
+
+async function api(path, options = {}) {
+  const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...options });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    if (res.status === 409) throw new Error("Ticket นี้ปิดแล้ว ตอบกลับไม่ได้");
+    if (res.status === 422) throw new Error("ข้อมูลไม่ถูกต้อง");
+    throw new Error("เกิดข้อผิดพลาด กรุณาลองใหม่");
+  }
+  return data;
+}
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text; // textContent เสมอ กัน XSS
+  return node;
+}
+
+function timeAgo(iso) {
+  const mins = Math.floor((Date.now() - new Date(iso)) / 60000);
+  if (mins < 1) return "เมื่อสักครู่";
+  if (mins < 60) return `${mins} นาที`;
+  if (mins < 1440) return `${Math.floor(mins / 60)} ชม.`;
+  return new Date(iso).toLocaleDateString("th-TH", { day: "numeric", month: "short" });
+}
+const fullDate = (iso) => new Date(iso).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" });
+
+async function loadTickets() {
+  tickets = await api("/tickets?limit=100");
+  renderList();
+}
+
+function renderList() {
+  // ตัวเลขข้างปุ่มกรอง
+  for (const b of $("filters").children) {
+    const s = b.dataset.status;
+    b.querySelector(".count").textContent = s ? tickets.filter((t) => t.status === s).length : tickets.length;
+  }
+
+  const q = $("search").value.trim().toLowerCase();
+  const shown = tickets.filter((t) =>
+    (!filter || t.status === filter) &&
+    (!q || t.title.toLowerCase().includes(q) || t.customer_email.toLowerCase().includes(q)));
+
+  const list = $("list");
+  list.replaceChildren();
+  if (shown.length === 0) {
+    const empty = el("div", "empty");
+    empty.append(el("strong", "", "ไม่พบ ticket"), el("span", "", "ลองเปลี่ยนตัวกรองหรือคำค้นหา"));
+    list.append(empty);
+    return;
+  }
+  for (const t of shown) {
+    const item = el("div", "item" + (t.id === selectedId ? " selected" : ""));
+    const row = el("div", "item-row");
+    row.append(el("span", "item-email", t.customer_email), el("span", "item-time", timeAgo(t.updated_at)));
+    const tags = el("div", "item-tags");
+    tags.append(el("span", `badge s-${t.status}`, STATUS_TH[t.status]), el("span", `prio ${t.priority}`, PRIORITY_TH[t.priority]));
+    item.append(row, el("div", "item-title", `#${t.id} · ${t.title}`), tags);
+    item.onclick = () => openTicket(t.id);
+    list.append(item);
+  }
+}
+
+async function openTicket(id) {
+  selectedId = id;
+  history.replaceState(null, "", `#${id}`); // จำ ticket ที่เปิดไว้ใน URL รีเฟรชแล้วยังอยู่ที่เดิม
+  const [t, comments] = await Promise.all([api(`/tickets/${id}`), api(`/tickets/${id}/comments`)]);
+
+  $("placeholder").classList.add("hidden");
+  $("view").classList.remove("hidden");
+  $("props").classList.remove("hidden");
+  $("update-error").textContent = "";
+  $("reply-error").textContent = "";
+
+  $("t-id").textContent = `TICKET #${t.id}`;
+  $("t-title").textContent = t.title;
+  $("t-status").value = t.status;
+  $("t-priority").value = t.priority;
+  $("t-email").textContent = t.customer_email;
+  $("t-created").textContent = fullDate(t.created_at);
+  $("t-updated").textContent = fullDate(t.updated_at);
+
+  // จอเล็ก: ย้ายตัวเลือก status/priority ขึ้นไปไว้หัวบทสนทนา
+  const small = window.matchMedia("(max-width: 1100px)").matches;
+  (small ? $("inline-props") : $("props-controls")).append(...$("t-status").closest(".prop").parentElement.querySelectorAll(".prop"));
+
+  // ข้อความแรก = รายละเอียดที่ลูกค้าแจ้งมา ตามด้วยการตอบกลับทั้งหมด
+  const thread = $("thread");
+  thread.replaceChildren();
+  const messages = [{ author_role: "customer", author_name: t.customer_email, body: t.description, created_at: t.created_at }, ...comments];
+  for (const c of messages) {
+    const isAgent = c.author_role === "agent";
+    const row = el("div", `msg-row ${c.author_role}`);
+    const bubble = el("div", "bubble");
+    const who = el("div", "who");
+    who.append(el("b", "", c.author_name), el("span", "role", isAgent ? "Agent" : "Customer"), fullDate(c.created_at));
+    bubble.append(who, el("div", "msg", c.body));
+    row.append(el("div", "avatar", c.author_name.slice(0, 1).toUpperCase()), bubble);
+    thread.append(row);
+  }
+  thread.scrollTop = thread.scrollHeight;
+
+  const closed = t.status === "closed";
+  $("reply-form").classList.toggle("hidden", closed);
+  $("closed-note").classList.toggle("hidden", !closed);
+  loadTickets(); // อัปเดตรายการ + ไฮไลต์
+}
+
+async function updateTicket(field, value) {
+  try {
+    await api(`/tickets/${selectedId}`, { method: "PATCH", body: JSON.stringify({ [field]: value }) });
+    await openTicket(selectedId);
+  } catch (err) {
+    $("update-error").textContent = err.message;
+  }
+}
+$("t-status").onchange = (e) => updateTicket("status", e.target.value);
+$("t-priority").onchange = (e) => updateTicket("priority", e.target.value);
+
+$("filters").onclick = (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  filter = btn.dataset.status;
+  for (const b of $("filters").children) b.classList.toggle("active", b === btn);
+  renderList();
+};
+$("search").oninput = renderList;
+
+$("reply-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const name = $("agent-name").value.trim();
+  if (!name) {
+    $("reply-error").textContent = "กรุณาใส่ชื่อเจ้าหน้าที่ที่มุมขวาบนก่อนตอบกลับ";
+    $("agent-name").focus();
+    return;
+  }
+  const btn = e.target.querySelector("button");
+  btn.disabled = true;
+  $("reply-error").textContent = "";
+  try {
+    await api(`/tickets/${selectedId}/comments`, {
+      method: "POST",
+      body: JSON.stringify({ author_role: "agent", author_name: name, body: $("reply-body").value }),
+    });
+    e.target.reset();
+    // ticket ใหม่ที่เจ้าหน้าที่ตอบแล้ว = เริ่มดำเนินการ
+    if ($("t-status").value === "open") await updateTicket("status", "in_progress");
+    else await openTicket(selectedId);
+  } catch (err) {
+    $("reply-error").textContent = err.message;
+  } finally {
+    btn.disabled = false;
+  }
+};
+// ⌘/Ctrl + Enter เพื่อส่ง
+$("reply-body").onkeydown = (e) => {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) $("reply-form").requestSubmit();
+};
+
+const initialId = Number(location.hash.slice(1));
+if (initialId) openTicket(initialId).catch(() => loadTickets());
+else loadTickets();
+setInterval(loadTickets, 15000); // ดึงรายการใหม่ทุก 15 วินาที เผื่อมี ticket เข้ามาใหม่
+</script>
+</body>
+</html>
