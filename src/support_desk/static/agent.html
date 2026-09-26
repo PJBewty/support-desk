@@ -130,6 +130,37 @@
     .empty-icon svg { width: 22px; height: 22px; }
     .empty strong { color: var(--ink); }
     .hidden { display: none !important; }
+
+    /* login */
+    .login { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: var(--bg); padding: 16px; }
+    .login-card { width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 32px; box-shadow: 0 8px 24px rgba(16,24,40,.06); }
+    .login-card .logo { width: 36px; height: 36px; border-radius: 9px; background: var(--ink); color: #fff; margin-bottom: 20px; }
+    .login-card h1 { margin: 0 0 4px; font-size: 1.3rem; color: var(--ink); }
+    .login-card p { margin: 0 0 24px; color: var(--muted); }
+    .login-card label { display: block; font-weight: 500; font-size: .85rem; margin: 14px 0 6px; color: var(--ink); }
+    .login-card input { width: 100%; padding: 10px 12px; }
+    .login-card .btn { width: 100%; justify-content: center; margin-top: 22px; padding: 11px; }
+
+    .me-name { color: #d1d5db; font-weight: 500; }
+    .ghost { background: transparent; border: 1px solid #2c303b; color: #a8adb8; border-radius: 7px; padding: 5px 10px; font: inherit; font-size: .8rem; cursor: pointer; }
+    .ghost:hover { color: #fff; border-color: #4b5160; }
+    .assignee { font-size: .75rem; color: var(--faint); margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+    .assignee.me { color: var(--accent); font-weight: 600; }
+    .link-btn { background: none; border: 0; padding: 0; margin-top: 6px; color: var(--accent); font: inherit; font-size: .8rem; font-weight: 500; cursor: pointer; }
+    .link-btn:hover { text-decoration: underline; }
+
+    /* composer modes */
+    .modes { display: flex; gap: 2px; margin-bottom: 8px; }
+    .modes button { border: 0; background: transparent; padding: 5px 10px; border-radius: 7px; font: inherit; font-size: .82rem; font-weight: 500; color: var(--muted); cursor: pointer; }
+    .modes button.active { background: var(--hover); color: var(--ink); }
+    .modes button.active[data-mode="note"] { background: #fef3c7; color: #92400e; }
+    .modes button:disabled { opacity: .4; cursor: not-allowed; }
+    .composer.note .composer-box { background: #fffbeb; border-color: #f5d68a; }
+    .composer.note .composer-box:focus-within { box-shadow: 0 0 0 3px #fdf0c4; border-color: #e0b44c; }
+    .composer.note .btn { background: #92400e; }
+    .msg-row.internal .msg { background: #fffbeb; border: 1px dashed #e9c46a; }
+    .msg-row.internal .avatar { background: #f59e0b; color: #fff; }
+    .msg-row.internal .role { background: #fef3c7; color: #92400e; }
   </style>
 </head>
 <body>
@@ -146,10 +177,25 @@
     <span class="sep">/</span><span class="page">Inbox</span>
   </div>
   <div class="me">
-    <input id="agent-name" placeholder="ชื่อเจ้าหน้าที่" aria-label="ชื่อเจ้าหน้าที่">
+    <span class="me-name" id="me-name"></span>
     <div class="me-avatar" id="me-avatar">?</div>
+    <button class="ghost" id="logout" type="button">ออกจากระบบ</button>
   </div>
 </header>
+
+<div id="login-screen" class="login hidden">
+  <form id="login-form" class="login-card">
+    <div class="logo"><svg><use href="#i-chat"/></svg></div>
+    <h1>เข้าสู่ระบบ Support Desk</h1>
+    <p>สำหรับเจ้าหน้าที่เท่านั้น</p>
+    <label for="login-email">อีเมล</label>
+    <input id="login-email" type="email" required autocomplete="username">
+    <label for="login-password">รหัสผ่าน</label>
+    <input id="login-password" type="password" required autocomplete="current-password">
+    <button class="btn" type="submit">เข้าสู่ระบบ</button>
+    <div class="error" id="login-error"></div>
+  </form>
+</div>
 
 <div class="layout">
   <!-- คอลัมน์ 1: inbox -->
@@ -162,6 +208,7 @@
       </div>
       <div class="filters" id="filters">
         <button data-status="" class="active">ทั้งหมด <span class="count"></span></button>
+        <button data-status="mine">งานของฉัน <span class="count"></span></button>
         <button data-status="open">รอดำเนินการ <span class="count"></span></button>
         <button data-status="in_progress">กำลังทำ <span class="count"></span></button>
         <button data-status="resolved">แก้แล้ว <span class="count"></span></button>
@@ -188,17 +235,21 @@
       </div>
       <div class="thread" id="thread"></div>
 
+      <div id="closed-note" class="closed-note hidden">Ticket นี้ปิดแล้ว ตอบลูกค้าไม่ได้ แต่ยังเพิ่มโน้ตภายในได้ ถ้าต้องการตอบ ให้เปลี่ยนสถานะเป็น "กำลังดำเนินการ" ก่อน</div>
       <form id="reply-form" class="composer">
+        <div class="modes" id="modes">
+          <button type="button" data-mode="reply" class="active">ตอบลูกค้า</button>
+          <button type="button" data-mode="note">โน้ตภายใน</button>
+        </div>
         <div class="composer-box">
           <textarea id="reply-body" required placeholder="เขียนคำตอบถึงลูกค้า"></textarea>
           <div class="composer-foot">
             <span class="kbd-hint"><kbd>⌘</kbd> + <kbd>Enter</kbd> เพื่อส่ง</span>
-            <button class="btn" type="submit"><svg><use href="#i-send"/></svg>ส่งคำตอบ</button>
+            <button class="btn" type="submit" id="send-btn"><svg><use href="#i-send"/></svg><span id="send-label">ส่งคำตอบ</span></button>
           </div>
         </div>
         <div class="error" id="reply-error"></div>
       </form>
-      <div id="closed-note" class="closed-note hidden">Ticket นี้ปิดแล้ว เปลี่ยนสถานะเพื่อเปิดใหม่ก่อนตอบกลับ</div>
     </div>
   </section>
 
@@ -224,6 +275,11 @@
             <option value="high">สูง</option>
           </select>
         </div>
+        <div class="prop">
+          <label for="t-assignee">ผู้รับผิดชอบ</label>
+          <select id="t-assignee"><option value="">ยังไม่มีผู้รับผิดชอบ</option></select>
+          <button type="button" class="link-btn" id="assign-me">รับงานนี้เอง</button>
+        </div>
       </div>
       <div class="error" id="update-error"></div>
       <div class="divider"></div>
@@ -244,21 +300,32 @@ const PRIORITY_TH = { low: "ต่ำ", medium: "ปานกลาง", high: "
 let tickets = [];      // ticket ทั้งหมด (กรองฝั่งเบราว์เซอร์)
 let filter = "";
 let selectedId = null;
+let me = null;         // เจ้าหน้าที่ที่ล็อกอินอยู่
+let agents = new Map(); // id -> ชื่อ
+let mode = "reply";    // "reply" = ตอบลูกค้า, "note" = โน้ตภายใน
+let refreshTimer = null;
 
-// จำชื่อเจ้าหน้าที่ไว้ในเบราว์เซอร์ ไม่ต้องพิมพ์ใหม่ทุกครั้ง
-function syncAvatar() { $("me-avatar").textContent = ($("agent-name").value.trim()[0] || "?").toUpperCase(); }
-try { $("agent-name").value = localStorage.getItem("agentName") || ""; } catch {}
-syncAvatar();
-$("agent-name").oninput = (e) => {
-  syncAvatar();
-  try { localStorage.setItem("agentName", e.target.value); } catch {}
-};
+// ---- token: เก็บไว้ในเบราว์เซอร์ ล็อกอินครั้งเดียวใช้ได้ 8 ชั่วโมง ----
+let token = null;
+try { token = localStorage.getItem("token"); } catch {}
+function saveToken(value) {
+  token = value;
+  try { value ? localStorage.setItem("token", value) : localStorage.removeItem("token"); } catch {}
+}
 
 async function api(path, options = {}) {
-  const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...options });
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(path, { headers, ...options });
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    if (res.status === 409) throw new Error("Ticket นี้ปิดแล้ว ตอบกลับไม่ได้");
+    if (res.status === 401) { showLogin(); throw new Error("กรุณาเข้าสู่ระบบอีกครั้ง"); }
+    if (res.status === 409) {
+      const bad = data?.detail?.match(/from (\w+) to (\w+)/);
+      throw new Error(bad
+        ? `เปลี่ยนจาก "${STATUS_TH[bad[1]]}" เป็น "${STATUS_TH[bad[2]]}" โดยตรงไม่ได้`
+        : "Ticket นี้ปิดแล้ว ตอบกลับไม่ได้");
+    }
     if (res.status === 422) throw new Error("ข้อมูลไม่ถูกต้อง");
     throw new Error("เกิดข้อผิดพลาด กรุณาลองใหม่");
   }
@@ -286,16 +353,22 @@ async function loadTickets() {
   renderList();
 }
 
+function matchesFilter(t, f) {
+  if (!f) return true;
+  if (f === "mine") return t.assignee_id === me?.id;
+  return t.status === f;
+}
+
 function renderList() {
   // ตัวเลขข้างปุ่มกรอง
   for (const b of $("filters").children) {
     const s = b.dataset.status;
-    b.querySelector(".count").textContent = s ? tickets.filter((t) => t.status === s).length : tickets.length;
+    b.querySelector(".count").textContent = tickets.filter((t) => matchesFilter(t, s)).length;
   }
 
   const q = $("search").value.trim().toLowerCase();
   const shown = tickets.filter((t) =>
-    (!filter || t.status === filter) &&
+    matchesFilter(t, filter) &&
     (!q || t.title.toLowerCase().includes(q) || t.customer_email.toLowerCase().includes(q)));
 
   const list = $("list");
@@ -312,6 +385,8 @@ function renderList() {
     row.append(el("span", "item-email", t.customer_email), el("span", "item-time", timeAgo(t.updated_at)));
     const tags = el("div", "item-tags");
     tags.append(el("span", `badge s-${t.status}`, STATUS_TH[t.status]), el("span", `prio ${t.priority}`, PRIORITY_TH[t.priority]));
+    const mine = t.assignee_id === me?.id;
+    tags.append(el("span", "assignee" + (mine ? " me" : ""), t.assignee_id ? (mine ? "ฉัน" : agents.get(t.assignee_id) || "?") : "ยังไม่มีคนรับ"));
     item.append(row, el("div", "item-title", `#${t.id} · ${t.title}`), tags);
     item.onclick = () => openTicket(t.id);
     list.append(item);
@@ -333,6 +408,8 @@ async function openTicket(id) {
   $("t-title").textContent = t.title;
   $("t-status").value = t.status;
   $("t-priority").value = t.priority;
+  $("t-assignee").value = t.assignee_id ?? "";
+  $("assign-me").classList.toggle("hidden", t.assignee_id === me.id);
   $("t-email").textContent = t.customer_email;
   $("t-created").textContent = fullDate(t.created_at);
   $("t-updated").textContent = fullDate(t.updated_at);
@@ -347,19 +424,22 @@ async function openTicket(id) {
   const messages = [{ author_role: "customer", author_name: t.customer_email, body: t.description, created_at: t.created_at }, ...comments];
   for (const c of messages) {
     const isAgent = c.author_role === "agent";
-    const row = el("div", `msg-row ${c.author_role}`);
+    const row = el("div", `msg-row ${c.author_role}` + (c.internal ? " internal" : ""));
     const bubble = el("div", "bubble");
     const who = el("div", "who");
-    who.append(el("b", "", c.author_name), el("span", "role", isAgent ? "Agent" : "Customer"), fullDate(c.created_at));
+    const role = c.internal ? "Internal note" : isAgent ? "Agent" : "Customer";
+    who.append(el("b", "", c.author_name), el("span", "role", role), fullDate(c.created_at));
     bubble.append(who, el("div", "msg", c.body));
     row.append(el("div", "avatar", c.author_name.slice(0, 1).toUpperCase()), bubble);
     thread.append(row);
   }
   thread.scrollTop = thread.scrollHeight;
 
+  // ticket ปิดแล้ว: ตอบลูกค้าไม่ได้ แต่ยังเขียนโน้ตภายในได้
   const closed = t.status === "closed";
-  $("reply-form").classList.toggle("hidden", closed);
   $("closed-note").classList.toggle("hidden", !closed);
+  $("modes").querySelector('[data-mode="reply"]').disabled = closed;
+  setMode(closed ? "note" : mode);
   loadTickets(); // อัปเดตรายการ + ไฮไลต์
 }
 
@@ -368,11 +448,26 @@ async function updateTicket(field, value) {
     await api(`/tickets/${selectedId}`, { method: "PATCH", body: JSON.stringify({ [field]: value }) });
     await openTicket(selectedId);
   } catch (err) {
+    await openTicket(selectedId); // คืนค่าในช่องเลือกกลับเป็นสถานะจริง
     $("update-error").textContent = err.message;
   }
 }
 $("t-status").onchange = (e) => updateTicket("status", e.target.value);
 $("t-priority").onchange = (e) => updateTicket("priority", e.target.value);
+$("t-assignee").onchange = (e) => updateTicket("assignee_id", e.target.value ? Number(e.target.value) : null);
+$("assign-me").onclick = () => updateTicket("assignee_id", me.id);
+
+function setMode(next) {
+  mode = next;
+  for (const b of $("modes").children) b.classList.toggle("active", b.dataset.mode === mode);
+  $("reply-form").classList.toggle("note", mode === "note");
+  $("reply-body").placeholder = mode === "note" ? "โน้ตถึงทีม ลูกค้าจะไม่เห็นข้อความนี้" : "เขียนคำตอบถึงลูกค้า";
+  $("send-label").textContent = mode === "note" ? "บันทึกโน้ต" : "ส่งคำตอบ";
+}
+$("modes").onclick = (e) => {
+  const btn = e.target.closest("button");
+  if (btn && !btn.disabled) setMode(btn.dataset.mode);
+};
 
 $("filters").onclick = (e) => {
   const btn = e.target.closest("button");
@@ -385,23 +480,18 @@ $("search").oninput = renderList;
 
 $("reply-form").onsubmit = async (e) => {
   e.preventDefault();
-  const name = $("agent-name").value.trim();
-  if (!name) {
-    $("reply-error").textContent = "กรุณาใส่ชื่อเจ้าหน้าที่ที่มุมขวาบนก่อนตอบกลับ";
-    $("agent-name").focus();
-    return;
-  }
-  const btn = e.target.querySelector("button");
+  const btn = $("send-btn");
+  const internal = mode === "note";
   btn.disabled = true;
   $("reply-error").textContent = "";
   try {
     await api(`/tickets/${selectedId}/comments`, {
       method: "POST",
-      body: JSON.stringify({ author_role: "agent", author_name: name, body: $("reply-body").value }),
+      body: JSON.stringify({ body: $("reply-body").value, internal }),
     });
-    e.target.reset();
-    // ticket ใหม่ที่เจ้าหน้าที่ตอบแล้ว = เริ่มดำเนินการ
-    if ($("t-status").value === "open") await updateTicket("status", "in_progress");
+    $("reply-body").value = "";
+    // ticket ใหม่ที่เจ้าหน้าที่ตอบลูกค้าแล้ว = เริ่มดำเนินการ (โน้ตภายในไม่นับ)
+    if (!internal && $("t-status").value === "open") await updateTicket("status", "in_progress");
     else await openTicket(selectedId);
   } catch (err) {
     $("reply-error").textContent = err.message;
@@ -414,10 +504,56 @@ $("reply-body").onkeydown = (e) => {
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) $("reply-form").requestSubmit();
 };
 
-const initialId = Number(location.hash.slice(1));
-if (initialId) openTicket(initialId).catch(() => loadTickets());
-else loadTickets();
-setInterval(loadTickets, 15000); // ดึงรายการใหม่ทุก 15 วินาที เผื่อมี ticket เข้ามาใหม่
+// ---- login / logout ----
+function showLogin() {
+  saveToken(null);
+  clearInterval(refreshTimer);
+  $("login-screen").classList.remove("hidden");
+  $("login-email").focus();
+}
+
+$("login-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector("button");
+  btn.disabled = true;
+  $("login-error").textContent = "";
+  try {
+    const res = await fetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: $("login-email").value, password: $("login-password").value }),
+    });
+    if (!res.ok) throw new Error(res.status === 401 ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง" : "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่");
+    saveToken((await res.json()).access_token);
+    $("login-password").value = "";
+    await start();
+  } catch (err) {
+    $("login-error").textContent = err.message;
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+$("logout").onclick = showLogin;
+
+async function start() {
+  me = await api("/auth/me");
+  const list = await api("/agents");
+  agents = new Map(list.map((a) => [a.id, a.name]));
+  $("t-assignee").replaceChildren(new Option("ยังไม่มีผู้รับผิดชอบ", ""), ...list.map((a) => new Option(a.name, a.id)));
+  $("me-name").textContent = me.name;
+  $("me-avatar").textContent = me.name.slice(0, 1).toUpperCase();
+  $("login-screen").classList.add("hidden");
+
+  const initialId = Number(location.hash.slice(1));
+  if (initialId) await openTicket(initialId).catch(() => loadTickets());
+  else await loadTickets();
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(loadTickets, 15000); // ดึงรายการใหม่ทุก 15 วินาที เผื่อมี ticket เข้ามาใหม่
+}
+
+if (token) start().catch(() => {});
+else showLogin();
 </script>
 </body>
 </html>
